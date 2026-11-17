@@ -15,8 +15,11 @@ def mainMenu():
 def pingIP():
     print("- Ping Single IP -")
     
-    print("Please Enter the IP you want to check")
-    ip = input("-> ")
+    validIP = False
+    while not validIP:
+        print("Please Enter the IP you want to check")
+        ip = input("-> ")
+        validIP = checkIPStr(ip)
     
     with concurrent.futures.ThreadPoolExecutor() as exec:
         future = exec.submit(ping, ip)
@@ -38,6 +41,19 @@ def ping(ip):
         print(ex)
     else:
         return result.returncode
+    
+def checkIPStr(ip):
+    numbers = ip.rsplit(".")
+    
+    if len(numbers) == 4:
+        for num in numbers:
+            if int(num) < 0 or int(num) > 255:
+                return False
+        
+        return True
+    else:
+        print("Incorrect Format, Please Insert an Valid IP, Ex: 192.168.1.1")
+        return False
 
 print("-------------------------------------------------------")
 print("- IP Ping Tester -")
