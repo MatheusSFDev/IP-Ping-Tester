@@ -36,3 +36,5 @@ while program:
 
 print("Thanks for Using!")
 print("-------------------------------------------------------")
+
+input("Press anything to Close...")
