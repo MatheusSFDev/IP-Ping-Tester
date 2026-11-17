@@ -1,4 +1,7 @@
 #by MatheusSFDev
+import platform, subprocess, concurrent.futures
+
+system = platform.system()
 program = True
 
 # * Program Functions
@@ -12,8 +15,29 @@ def mainMenu():
 def pingIP():
     print("- Ping Single IP -")
     
-def pingMultipleIPs():
+    print("Please Enter the IP you want to check")
+    ip = input("-> ")
+    
+    with concurrent.futures.ThreadPoolExecutor() as exec:
+        future = exec.submit(ping, ip)
+        result = "Connected" if future.result() == 0 else "Disconnected"
+        
+    print(F"Result: {result}")
+    
+def pingIPs():
     print("- Ping Multiple IPs -")
+    
+def ping(ip):
+    try:
+        if (system == 'Windows'):
+            result = subprocess.run(["ping", ip], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else:
+            result = subprocess.run(["ping", "-c", "4", ip], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as ex:
+        print("An Error has ocurred while executing the Ping Command, More Info:")
+        print(ex)
+    else:
+        return result.returncode
 
 print("-------------------------------------------------------")
 print("- IP Ping Tester -")
@@ -26,7 +50,7 @@ while program:
         case "1":
             pingIP()
         case "2":
-            pingMultipleIPs()
+            pingIPs()
         case "0":
             program = False
         case _:
@@ -37,4 +61,4 @@ while program:
 print("Thanks for Using!")
 print("-------------------------------------------------------")
 
-input("Press anything to Close...")
+input("Press Enter to Close...")
