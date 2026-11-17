@@ -23,24 +23,81 @@ def pingIP():
     
     with concurrent.futures.ThreadPoolExecutor() as exec:
         future = exec.submit(ping, ip)
-        result = "Connected" if future.result() == 0 else "Disconnected"
+        ip, code = future.result()
         
-    print(F"Result: {result}")
+        result = "Connected" if code == 0 else "Disconnected"
+        print(F"Result: {result}")
     
 def pingIPs():
     print("- Ping Multiple IPs -")
+    IPs = []
+    
+    inserting = True
+    while inserting:
+        print("Please Enter the IP you want to check (Press Enter when you finish)")
+        ip = input("-> ")
+        
+        if ip != "":
+            validIP = False
+            while not validIP:
+                validIP = checkIPStr(ip)
+                
+                if not validIP:
+                    print("(Or if you want to exit press Enter)")
+                    ip = input("-> ")
+                    
+                    if ip == "":
+                        inserting = False
+                        break
+                    
+            if validIP:
+                IPs.append(ip)
+        elif len(IPs) == 0:
+            print("Insert at least 1 IP")
+        else:
+            inserting = False
+    
+    results = []
+    
+    with concurrent.futures.ThreadPoolExecutor() as exec:
+        futures = [exec.submit(ping, ip) for ip in IPs]
+        for future in concurrent.futures.as_completed(futures):
+            ip, code = future.result()
+            results.append({"ip": ip, "code": code})
+            
+    if len(results) != 0:
+        connected, disconnected = [], []
+        
+        for result in results:
+            if int(result["code"]) == 0:
+                connected.append(result["ip"])
+            else:
+                disconnected.append(result["ip"])
+
+        print("- Connected IPs -")
+        for con in connected:
+            print(F"IP: {con}")
+        
+        print("- Disconnected IPs -")
+        for dis in disconnected:
+                print(F"IP: {dis}")
     
 def ping(ip):
     try:
-        if (system == 'Windows'):
-            result = subprocess.run(["ping", ip], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if system == 'Windows':
+            result = subprocess.run(["ping", "-n", "1", ip], capture_output=True, text=True, encoding="cp850")
         else:
-            result = subprocess.run(["ping", "-c", "4", ip], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            result = subprocess.run(["ping", "-c", "1", ip], capture_output=True, text=True)
+            
+        if "TTL" in result.stdout.upper() or result.returncode == 0 and "bytes=" in result.stdout.lower():
+            return ip, 0
+        else:
+            return ip, 1
+            
     except Exception as ex:
-        print("An Error has ocurred while executing the Ping Command, More Info:")
-        print(ex)
-    else:
-        return result.returncode
+        print(f"An Error has occurred for {ip}: {ex}")
+        return ip, 1
+        
     
 def checkIPStr(ip):
     numbers = ip.rsplit(".")
